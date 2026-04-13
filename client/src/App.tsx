@@ -15,6 +15,7 @@ export default function App() {
   useEffect(() => {
     const ws = new WebSocket(WS_URL);
     wsRef.current = ws;
+    let intentionalClose = false;
 
     ws.onmessage = (ev) => {
       const msg = JSON.parse(ev.data);
@@ -27,11 +28,16 @@ export default function App() {
     };
 
     ws.onclose = () => {
-      // Reload to reconnect as new player
-      setTimeout(() => window.location.reload(), 2000);
+      if (!intentionalClose) {
+        // Reload to reconnect as new player
+        setTimeout(() => window.location.reload(), 2000);
+      }
     };
 
-    return () => ws.close();
+    return () => {
+      intentionalClose = true;
+      ws.close();
+    };
   }, []);
 
   function send(msg: object) {
