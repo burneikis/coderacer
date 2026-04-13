@@ -10,6 +10,7 @@ export default function App() {
   const [myId, setMyId] = useState<string | null>(null);
   const [state, setState] = useState<GameState | null>(null);
   const [joined, setJoined] = useState(false);
+  const [isJaysean, setIsJaysean] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
@@ -46,6 +47,7 @@ export default function App() {
 
   function handleJoin(name: string) {
     send({ type: 'join', name });
+    setIsJaysean(name.toLowerCase() === 'jaysean');
     setJoined(true);
   }
 
@@ -72,6 +74,7 @@ export default function App() {
       <Race
         state={state}
         myId={myId}
+        isJaysean={isJaysean}
         onProgress={(progress, wpm) => send({ type: 'progress', progress, wpm })}
         onFinished={(wpm) => send({ type: 'finished', wpm })}
       />

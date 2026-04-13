@@ -20,6 +20,7 @@ interface GameState {
   phase: Phase;
   snippet: string;
   snippetName: string;
+  chinesePrompt: string;
   players: Player[];
   startTime?: number;
   countdown?: number;
@@ -34,6 +35,7 @@ const snippetsDir = path.join(__dirname, '..', 'snippets');
 interface Snippet {
   name: string;
   content: string;
+  chinesePrompt: string;
 }
 
 function loadSnippets(): Snippet[] {
@@ -45,7 +47,11 @@ function loadSnippets(): Snippet[] {
       .map((line) => line.replace(/\t/g, '  ').trimEnd())
       .join('\n')
       .trimEnd();
-    return { name: file, content };
+    const zhFile = path.join(snippetsDir, file.replace(/\.ts$/, '.zh.txt'));
+    const chinesePrompt = fs.existsSync(zhFile)
+      ? fs.readFileSync(zhFile, 'utf-8').trim()
+      : '';
+    return { name: file, content, chinesePrompt };
   });
 }
 
@@ -63,6 +69,7 @@ const state: GameState = {
   phase: 'waiting',
   snippet: '',
   snippetName: '',
+  chinesePrompt: '',
   players: [],
   hostId: null,
 };
@@ -161,6 +168,7 @@ function startCountdown() {
   const snippet = pickSnippet();
   state.snippet = snippet.content;
   state.snippetName = snippet.name;
+  state.chinesePrompt = snippet.chinesePrompt;
 
   // Reset player progress
   for (const p of state.players) {
@@ -255,6 +263,7 @@ wss.on('connection', (ws) => {
       state.phase = 'waiting';
       state.snippet = '';
       state.snippetName = '';
+      state.chinesePrompt = '';
       state.countdown = undefined;
       state.endCountdown = undefined;
       state.startTime = undefined;

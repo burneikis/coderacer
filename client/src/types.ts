@@ -13,6 +13,7 @@ export interface GameState {
   phase: Phase;
   snippet: string;
   snippetName: string;
+  chinesePrompt: string;
   players: Player[];
   startTime?: number;
   countdown?: number;
