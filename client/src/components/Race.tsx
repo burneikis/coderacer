@@ -17,6 +17,7 @@ export default function Race({ state, myId, onProgress, onFinished }: Props) {
   const snippet = state.snippet;
   const isRacing = state.phase === 'racing';
   const isCountdown = state.phase === 'countdown';
+  const endCountdown = state.endCountdown;
 
   // Focus container on mount
   useEffect(() => {
@@ -150,6 +151,36 @@ export default function Race({ state, myId, onProgress, onFinished }: Props) {
             }}
           >
             {state.countdown}
+          </span>
+        </div>
+      )}
+
+      {/* End countdown banner */}
+      {endCountdown !== undefined && (
+        <div
+          style={{
+            background: 'var(--surface)',
+            border: '1px solid var(--yellow)',
+            borderRadius: 8,
+            padding: '0.6rem 1.25rem',
+            marginBottom: '1rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <span style={{ color: 'var(--yellow)', fontSize: '0.875rem', fontWeight: 600 }}>
+            🏁 Someone finished! Keep going…
+          </span>
+          <span
+            style={{
+              color: endCountdown <= 10 ? 'var(--red)' : 'var(--yellow)',
+              fontSize: '1.25rem',
+              fontWeight: 700,
+              fontVariantNumeric: 'tabular-nums',
+            }}
+          >
+            {endCountdown}s
           </span>
         </div>
       )}

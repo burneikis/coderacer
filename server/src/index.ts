@@ -23,6 +23,7 @@ interface GameState {
   players: Player[];
   startTime?: number;
   countdown?: number;
+  endCountdown?: number;
   hostId: string | null;
 }
 
@@ -98,18 +99,56 @@ function removePlayer(id: string) {
   // If mid-race, check if everyone remaining has finished
   if (state.phase === 'racing') {
     checkAllFinished();
+    // If there's an end-countdown running and all remaining players are done, wrap up
+    if (endCountdownTimer && state.players.length > 0 && state.players.every((p) => p.finished)) {
+      checkAllFinished();
+    }
   }
 
   broadcastState();
 }
 
 let countdownTimer: ReturnType<typeof setInterval> | null = null;
+let endCountdownTimer: ReturnType<typeof setInterval> | null = null;
+
+function assignRemainingPlaces() {
+  // Give unfinished players places after finishers, ordered by progress descending
+  const finishedCount = state.players.filter((p) => p.finished).length;
+  const unfinished = [...state.players]
+    .filter((p) => !p.finished)
+    .sort((a, b) => b.progress - a.progress);
+  unfinished.forEach((p, i) => {
+    p.place = finishedCount + i + 1;
+  });
+}
+
+function startEndCountdown() {
+  if (endCountdownTimer) return; // already running
+  state.endCountdown = 30;
+  endCountdownTimer = setInterval(() => {
+    if (state.endCountdown !== undefined && state.endCountdown > 1) {
+      state.endCountdown--;
+      broadcastState();
+    } else {
+      clearInterval(endCountdownTimer!);
+      endCountdownTimer = null;
+      state.endCountdown = undefined;
+      assignRemainingPlaces();
+      state.phase = 'finished';
+      broadcastState();
+    }
+  }, 1000);
+}
 
 function checkAllFinished() {
-  if (
-    state.players.length > 0 &&
-    state.players.every((p) => p.finished)
-  ) {
+  if (state.players.length === 0) return;
+  if (state.players.every((p) => p.finished)) {
+    // Everyone done — cancel end countdown and go straight to finished
+    if (endCountdownTimer) {
+      clearInterval(endCountdownTimer);
+      endCountdownTimer = null;
+      state.endCountdown = undefined;
+    }
     state.phase = 'finished';
   }
 }
@@ -202,16 +241,22 @@ wss.on('connection', (ws) => {
       player.progress = 100;
       const finishedCount = state.players.filter((p) => p.finished).length;
       player.place = finishedCount;
+      // First finisher triggers the 30-second end countdown
+      if (finishedCount === 1) {
+        startEndCountdown();
+      }
       checkAllFinished();
       broadcastState();
     } else if (type === 'restart') {
       if (id !== state.hostId) return;
       if (state.phase !== 'finished') return;
       if (countdownTimer) clearInterval(countdownTimer);
+      if (endCountdownTimer) { clearInterval(endCountdownTimer); endCountdownTimer = null; }
       state.phase = 'waiting';
       state.snippet = '';
       state.snippetName = '';
       state.countdown = undefined;
+      state.endCountdown = undefined;
       state.startTime = undefined;
       for (const p of state.players) {
         p.progress = 0;

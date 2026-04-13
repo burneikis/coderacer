@@ -10,7 +10,13 @@ const medals = ['🥇', '🥈', '🥉'];
 
 export default function Results({ state, myId, onRestart }: Props) {
   const isHost = myId === state.hostId;
-  const sorted = [...state.players].sort((a, b) => (a.place ?? 999) - (b.place ?? 999));
+  // Finishers first (by place), then non-finishers sorted by progress descending
+  const sorted = [...state.players].sort((a, b) => {
+    if (a.finished && b.finished) return (a.place ?? 999) - (b.place ?? 999);
+    if (a.finished) return -1;
+    if (b.finished) return 1;
+    return b.progress - a.progress;
+  });
 
   return (
     <div style={{ maxWidth: 520, margin: '0 auto' }}>
@@ -38,9 +44,15 @@ export default function Results({ state, myId, onRestart }: Props) {
             <span style={{ flex: 1, color: p.id === myId ? 'var(--blue)' : 'var(--text)' }}>
               {p.name}
             </span>
-            <span style={{ color: 'var(--green)', fontSize: '0.9rem' }}>
-              {p.wpm} WPM
-            </span>
+            {p.finished ? (
+              <span style={{ color: 'var(--green)', fontSize: '0.9rem' }}>
+                {p.wpm} WPM
+              </span>
+            ) : (
+              <span style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>
+                {Math.round(p.progress)}% complete
+              </span>
+            )}
             {p.id === myId && (
               <span style={{ color: 'var(--muted)', fontSize: '0.75rem' }}>you</span>
             )}

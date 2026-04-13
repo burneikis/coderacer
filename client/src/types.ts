@@ -16,5 +16,6 @@ export interface GameState {
   players: Player[];
   startTime?: number;
   countdown?: number;
+  endCountdown?: number;
   hostId: string | null;
 }
