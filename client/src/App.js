@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import Lobby from './components/Lobby';
 import Race from './components/Race';
 import Results from './components/Results';
-const WS_URL = `ws://${window.location.hostname}:3001`;
+const WS_URL = import.meta.env.VITE_WS_URL ?? `ws://${window.location.hostname}:3001`;
 export default function App() {
     const [myId, setMyId] = useState(null);
     const [state, setState] = useState(null);
