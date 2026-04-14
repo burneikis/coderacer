@@ -2,7 +2,8 @@
   "name": "coderacer-server",
   "private": true,
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/index.ts"
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "start": "ts-node src/index.ts"
   },
   "dependencies": {
     "ws": "^8.17.0"
