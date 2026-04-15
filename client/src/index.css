@@ -16,12 +16,15 @@
   --yellow: #f9e2af;
   --mauve: #cba6f7;
   --font: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-feature-settings: 'liga' 0, 'calt' 0;
 }
 
 body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font);
+  font-feature-settings: 'liga' 0, 'calt' 0;
+  font-variant-ligatures: none;
   min-height: 100vh;
   display: flex;
   align-items: center;
