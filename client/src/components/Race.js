@@ -39,15 +39,44 @@ export default function Race({ state, myId, isJaysean, onProgress, onFinished })
         jayseanFinishedRef.current = false;
     }, [state.snippet]);
     // ── WPM helpers ────────────────────────────────────────────────────────
+    // Use a client-local start time so WPM doesn't depend on server/client
+    // clock agreement. Cheating isn't a concern here.
+    const localStartRef = useRef(null);
+    const [liveWpm, setLiveWpm] = useState(0);
+    useEffect(() => {
+        if (isRacing) {
+            localStartRef.current = Date.now();
+            setLiveWpm(0);
+        }
+        else {
+            localStartRef.current = null;
+        }
+    }, [isRacing, state.snippet]);
     function calcWpm(charsTyped) {
-        if (!state.startTime)
+        const start = localStartRef.current;
+        if (!start)
             return 0;
-        const mins = (Date.now() - state.startTime) / 60000;
+        const mins = (Date.now() - start) / 60000;
         if (mins < 0.001)
             return 0;
         // For Jaysean: Chinese chars per minute (CPM) — comparable scale to WPM
         return Math.round(charsTyped / (isJaysean ? 1 : 5) / mins);
     }
+    // Tick the WPM display every 250ms so it updates live (and decays while idle)
+    useEffect(() => {
+        if (!isRacing)
+            return;
+        const id = setInterval(() => {
+            const chars = isJaysean ? jayseanMatched : typed;
+            const wpm = calcWpm(chars);
+            setLiveWpm(wpm);
+            if (!finishedRef.current && !jayseanFinishedRef.current) {
+                const total = isJaysean ? (target?.length || 1) : snippet.length;
+                onProgress((chars / total) * 100, wpm);
+            }
+        }, 250);
+        return () => clearInterval(id);
+    }, [isRacing, isJaysean, typed, jayseanMatched, snippet, target, onProgress]);
     // ── Normal keydown handler ─────────────────────────────────────────────
     const handleKeyDown = useCallback((e) => {
         if (!isRacing || finishedRef.current)
@@ -126,7 +155,7 @@ export default function Race({ state, myId, isJaysean, onProgress, onFinished })
     // ── Shared rendering helpers ───────────────────────────────────────────
     const myPlayer = state.players.find((p) => p.id === myId);
     const metricLabel = isJaysean ? 'CPM' : 'WPM';
-    const metricValue = myPlayer?.wpm ?? 0;
+    const metricValue = liveWpm;
     // Render normal code snippet with per-char colouring
     const codeChars = snippet.split('').map((ch, i) => {
         let color = 'var(--muted)';
